@@ -1,16 +1,14 @@
-﻿using System;
+﻿using PayPal.Api;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using PayPal.Api;
+using System.Configuration;
 
 namespace ASPNETPayPal.Services
 {
-    public class PayPalPaymentService : IPayPalPaymentService
+    public static class PayPalPaymentService 
     {
-        public Payment CreatePayment(string url, string intent)
+        public static Payment CreatePayment(string url, string intent)
         {
-
             // Using apiContext to authenticate call.
             var apiContext = GetApiContext();
 
@@ -20,32 +18,58 @@ namespace ASPNETPayPal.Services
                 payer = new Payer
                 {
                     payment_method = "paypal"
-                }, 
-                transactions = GetTransactions()
+                },
+                transactions = GetTransactions(),
+                redirect_urls = GetReturnUrls(url, intent)
+                
             };
 
             // Created payment.
-            var created = payment.Create(apiContext);
-
-            return created;
+            return payment.Create(apiContext);
         }
 
-        public Payment ExecutePayment(string paymentId, string payerId)
+
+        private static RedirectUrls GetReturnUrls(string baseUrl, string intent)
         {
-            throw new NotImplementedException();
+            var returnUrl = intent == "sale" ? "/SinglePayments/PaymentSuccessful" : "/SinglePayments/AuthorizeSuccessful";
+
+            // Redirect URLS
+            // These URLs will determine how the user is redirected from PayPal 
+            // once they have either approved or canceled the payment.
+            return new RedirectUrls()
+            {
+                cancel_url = baseUrl + "/Home/PaymentCancelled",
+                return_url = baseUrl + returnUrl
+            };
         }
 
-        public APIContext GetApiContext()
+        public static Payment ExecutePayment(string paymentId, string payerId)
+        {
+            var context = GetApiContext();
+
+            var paymentExecution = new PaymentExecution() { payer_id = payerId };
+            var payment = new Payment() { id = paymentId };
+
+            // Execute
+            var executed = payment.Execute(context, paymentExecution);
+
+            return executed;
+        }
+
+        private static APIContext GetApiContext()
         {
             // Fetch configuration values.
-            var configuration = ConfigManager.Instance.GetProperties();
+            var config = new Dictionary<string, string>();
+            config.Add("clientId", ConfigurationManager.AppSettings["clientId"]);
+            config.Add("mode", ConfigurationManager.AppSettings["mode"]);
+            config.Add("clientSecret", ConfigurationManager.AppSettings["clientSecret"]);
 
-            var token = new OAuthTokenCredential(configuration).GetAccessToken();
+            var token = new OAuthTokenCredential(config).GetAccessToken();
 
             return new APIContext(token);
         }
 
-        public List<Transaction> GetTransactions()
+        private static List<Transaction> GetTransactions()
         {
             // Returning a list of transactions for the payment.
 

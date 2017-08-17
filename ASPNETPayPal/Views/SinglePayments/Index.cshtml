@@ -1,0 +1,17 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+
+<div class="container">
+    <div class="page-header">
+        <h3 class="text-center">ASP.NET PayPal Integration</h3>
+    </div>
+    <div>
+        <h4>Choose a payment</h4>
+        <br />
+        @using (Html.BeginForm("CreatePayment", "SinglePayments", FormMethod.Post))
+        {
+            <button type="submit" class="btn btn-primary">Single Payment</button>
+        }
+    </div>
+</div>
