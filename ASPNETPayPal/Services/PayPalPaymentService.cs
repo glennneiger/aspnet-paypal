@@ -72,7 +72,6 @@ namespace ASPNETPayPal.Services
         private static List<Transaction> GetTransactions()
         {
             // Returning a list of transactions for the payment.
-
             return new List<Transaction>()
             {
                 new Transaction
